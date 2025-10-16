@@ -569,6 +569,38 @@
 
 #comp-kr5maho1{--text-direction:var(--wix-opt-in-direction);}#comp-kr5mbbef{--item-size:99px;--item-margin-block:0;--item-margin-inline:0px 7px;--item-display:inline-block;--direction:var(--wix-opt-in-direction, ltr);width:99px;height:99px;}</style>
 
+
+<style id="remove-wix-banner">
+  /* Minimal override: kill Wix ads area without touching the rest */
+  :root { --wix-ads-height: 0px !important; }
+  #WIX_ADS,
+  #WIX_ADS_CONTAINER,
+  [id^="WIX_ADS"],
+  [data-testid="wix-ad"],
+  [data-aid="WIX_ADS"] {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    min-height: 0 !important;
+  }
+  /* Wix sets #site-root { top: var(--wix-ads-height) } – zero it out */
+  #site-root { top: 0 !important; }
+</style>
+<script>
+  // Belt & braces: remove any ad nodes if they get injected late
+  (function killWixBanner(){
+    const ids = ['WIX_ADS', 'WIX_ADS_CONTAINER'];
+    ids.forEach(id => { const el = document.getElementById(id); if (el) el.remove(); });
+    document.documentElement.style.setProperty('--wix-ads-height','0px');
+    const sr = document.getElementById('site-root'); if (sr) sr.style.top = '0px';
+    // Retry after hydration to beat late injections
+    setTimeout(killWixBanner, 1200);
+  })();
+</script>
+	
+
+	
+
 </head>
 <body class='disable-site-scroll-block-margin' >
 <script type="text/javascript">
