@@ -1,88 +1,113 @@
 --- a/index.html
 +++ b/index.html
-@@ -1,5 +1,85 @@
+@@ -1,6 +1,170 @@
  <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
 
  <head>
-+  <!-- ✨ Mobile + Wix-banner fix inserted -->
++  <!-- ✨ BEGIN: Wix banner removal + mobile responsiveness (non-destructive) -->
 +  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 +
-+  <style id="mobile-fix">
++  <!-- Hide/remove Wix banner & reserved space -->
++  <style id="wix-banner-off">
++    :root { --wix-ads-height: 0px !important; }
++    #site-root { top: 0 !important; }
++    #WIX_ADS,
++    #WIX_ADS_CONTAINER,
++    [id^="WIX_ADS"],
++    [data-testid="wix-ad"],
++    [data-aid="WIX_ADS"],
++    [data-hook="wix-ads"],
++    [class*="wixAds"],
++    [class*="wix-ads"] {
++      display: none !important;
++      visibility: hidden !important;
++      height: 0 !important;
++      min-height: 0 !important;
++    }
++  </style>
++  <script>
++    (function removeWixBanner(){
++      const kill = () => {
++        document.documentElement.style.setProperty('--wix-ads-height', '0px');
++        const sr = document.getElementById('site-root'); if (sr) sr.style.top = '0px';
++        const sel = [
++          '#WIX_ADS','#WIX_ADS_CONTAINER','[id^="WIX_ADS"]',
++          '[data-testid="wix-ad"]','[data-aid="WIX_ADS"]','[data-hook="wix-ads"]',
++          '[class*="wixAds"]','[class*="wix-ads"]'
++        ].join(',');
++        document.querySelectorAll(sel).forEach(n => n.remove());
++      };
++      // Run now + watch for late injections
++      kill();
++      const mo = new MutationObserver(kill);
++      mo.observe(document.documentElement, { childList: true, subtree: true });
++      setTimeout(kill, 800);
++      document.addEventListener('visibilitychange', () => !document.hidden && setTimeout(kill, 200));
++      addEventListener('resize', kill);
++    })();
++  </script>
++
++  <!-- Mobile fluid layout overrides (leave your content intact) -->
++  <style id="mobile-fluid-fix">
++    /* Always keep media fluid */
++    img, video, iframe, canvas { max-width: 100% !important; height: auto !important; }
++
 +    @media (max-width: 960px){
-+      #SITE_CONTAINER, #site-root, #masterPage, #PAGES_CONTAINER,
-+      #SITE_HEADER, #SITE_FOOTER {
++      html, body { max-width: 100% !important; overflow-x: hidden !important; }
++
++      /* Core Wix containers commonly fixed at desktop widths */
++      #SITE_CONTAINER, #site-root, #masterPage,
++      #PAGES_CONTAINER, #SITE_HEADER, #SITE_FOOTER {
 +        width: 100% !important;
 +        max-width: 100% !important;
 +        min-width: 0 !important;
 +      }
++
++      /* Remove hard min-width locks */
 +      [style*="min-width"] { min-width: 0 !important; }
++
++      /* Normalize common fixed widths from desktop layouts */
 +      [style*="width: 980px"], [style*="width:980px"],
 +      [style*="width: 1024px"], [style*="width:1024px"],
 +      [style*="width: 1200px"], [style*="width:1200px"] {
 +        width: 100% !important;
 +        max-width: 100% !important;
 +      }
-+      .siteAspectsContainer, .page-without-grid,
-+      .mesh-layout, [data-mesh-id] {
-+        max-width: 100% !important;
++
++      /* Mesh/grid wrappers */
++      .siteAspectsContainer, .page-without-grid, .mesh-layout, [data-mesh-id] {
 +        width: 100% !important;
-+      }
-+      img, video, iframe, canvas {
 +        max-width: 100% !important;
-+        height: auto !important;
 +      }
-+      body { overflow-x: hidden; }
 +    }
-+    :root { --wix-ads-height: 0px !important; }
-+    #site-root { top: 0 !important; }
 +  </style>
-+
 +  <script>
-+    (function enforceMobile(){
-+      const body = document.body;
-+      const html = document.documentElement;
++    // Make inline fixed widths fluid on small screens (non-destructive)
++    (function(){
++      function fluidInline(){
++        if (window.innerWidth > 960) return;
++        // Hint classes some Wix themes expect for mobile
++        document.body.classList.add('responsive','device-mobile-optimized');
++        document.documentElement.classList.add('mobile-viewport');
 +
-+      function setMobileClasses(){
-+        body.classList.add('responsive', 'device-mobile-optimized');
-+        html.classList.add('mobile-viewport');
-+      }
-+
-+      function fluidInlineWidths(){
-+        if (window.innerWidth <= 960) {
-+          document.querySelectorAll('[style]').forEach(el => {
-+            const s = el.getAttribute('style');
-+            if (!s) return;
-+            const m = s.match(/width\s*:\s*(\d{3,4})px/);
-+            if (m && Number(m[1]) >= 980) {
-+              el.style.width = '100%';
-+              el.style.maxWidth = '100%';
-+            }
-+            if (/min-width\s*:\s*\d+px/i.test(s)) {
-+              el.style.minWidth = '0';
-+            }
-+          });
-+        }
-+      }
-+
-+      function killWixBannerSpace(){
-+        ['WIX_ADS', 'WIX_ADS_CONTAINER'].forEach(id => {
-+          const el = document.getElementById(id);
-+          if (el) { el.style.display = 'none'; el.style.height = '0px'; }
++        document.querySelectorAll('[style]').forEach(el => {
++          const s = el.getAttribute('style') || '';
++          // Replace hard widths >= 980px with 100%
++          const m = s.match(/width\s*:\s*(\d{3,4})px/i);
++          if (m && +m[1] >= 980) {
++            el.style.width = '100%';
++            el.style.maxWidth = '100%';
++          }
++          // Remove min-width locks
++          if (/min-width\s*:\s*\d+px/i.test(s)) {
++            el.style.minWidth = '0';
++          }
 +        });
-+        document.documentElement.style.setProperty('--wix-ads-height','0px');
-+        const sr = document.getElementById('site-root');
-+        if (sr) sr.style.top = '0px';
 +      }
-+
-+      setMobileClasses();
-+      killWixBannerSpace();
-+      fluidInlineWidths();
-+
-+      window.addEventListener('resize', fluidInlineWidths);
-+      setTimeout(() => { setMobileClasses(); killWixBannerSpace(); fluidInlineWidths(); }, 800);
-+      document.addEventListener('visibilitychange', () => {
-+        if (!document.hidden) setTimeout(fluidInlineWidths, 200);
-+      });
++      fluidInline();
++      addEventListener('resize', fluidInline);
++      setTimeout(fluidInline, 800);
++      document.addEventListener('visibilitychange', () => !document.hidden && setTimeout(fluidInline, 200));
 +    })();
 +  </script>
-+  <!-- ✨ End mobile fix -->
++  <!-- ✨ END: mobile + banner fix -->
